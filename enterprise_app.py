@@ -1,6 +1,7 @@
 import streamlit as st
 import time
 import re
+from diagnosis_engine import diagnose_failure
 
 # --- Page Config ---
 st.set_page_config(
@@ -122,7 +123,30 @@ if run_btn:
 
     with col2:
         if not passed:
-            st.subheader("Step 3: Autonomous Auto-Repair (The Core Value)")
+            st.subheader("Step 3: Root-Cause Diagnosis")
+            diagnosis = diagnose_failure(
+                query=customer_query,
+                response=ai_output,
+                policy=business_policy,
+                system_prompt=initial_system_prompt,
+            )
+
+            st.error(f"Failure type: {diagnosis['failure_type']} · Severity: {diagnosis['severity']}")
+            st.markdown("**Why the response failed**")
+            st.write(diagnosis["root_cause"])
+
+            st.markdown("**Evidence**")
+            for item in diagnosis["evidence"]:
+                st.write(f"- {item}")
+
+            st.markdown("**Recommended next step**")
+            st.info(diagnosis["recommendation"])
+            st.caption(
+                f"Diagnostic confidence: {diagnosis['confidence']:.0%} · "
+                f"{diagnosis['limitations']}"
+            )
+
+            st.subheader("Step 4: Autonomous Auto-Repair (Prototype)")
             with st.spinner("Analyzing root cause & patching system prompt..."):
                 fixed_prompt = smart_simulate_auto_fix(initial_system_prompt, business_policy)
             
