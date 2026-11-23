@@ -82,3 +82,20 @@ def suggest_repair(system_prompt, policy, query, response, evaluation,
             "findings": repair["policy_validation"].get("findings", []),
         },
     }
+
+
+def retest_candidate(candidate_prompt, policy, query, *,
+                     policy_checker=None, generator=generate_response,
+                     evaluator=evaluate_compliance):
+    """Explicitly retest a screened candidate; never promote or deploy."""
+    from policy_guard import check_policy_preservation
+    validate_inputs(candidate_prompt, policy, query)
+    checker = policy_checker or check_policy_preservation
+    screening = checker(original_policy=policy, repaired_prompt=candidate_prompt)
+    if not screening["passed"]:
+        raise ValueError("Candidate failed policy-preservation screening.")
+    result = test_prompt(candidate_prompt, policy, query,
+                         generator=generator, evaluator=evaluator)
+    return {"response": result["response"], "evaluation": result["evaluation"],
+            "model": result["model"], "latency_ms": result["latency_ms"],
+            "policy_screening_passed": True}
