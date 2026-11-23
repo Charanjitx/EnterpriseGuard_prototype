@@ -89,7 +89,7 @@ def generate_response(
     usage = completion.usage
     return {
         "response": completion.choices[0].message.content,
-        "finish_reason": completion.choices[0].finish_reason,
+        "finish_reason": getattr(completion.choices[0], "finish_reason", None),
         "model": completion.model,
         "provider": "Groq",
         "latency_ms": latency,
