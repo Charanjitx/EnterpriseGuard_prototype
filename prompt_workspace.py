@@ -56,9 +56,18 @@ if submitted:
         b.metric("Authorization", verdict["authorization_status"])
         c.metric("Failure type", verdict["failure_type"])
         st.write("**Reason:**", verdict["reason"])
-        st.write("**Evidence:**", verdict["evidence"] or "None")
-        st.write("**Unsupported commitments:**",
-                 verdict["unsupported_commitments"] or "None")
+        st.markdown("**Policy evidence**")
+        if verdict["evidence"]:
+            for item in verdict["evidence"]:
+                st.markdown(f"- {item}")
+        else:
+            st.caption("No policy evidence identified.")
+        st.markdown("**Unsupported commitments**")
+        if verdict["unsupported_commitments"]:
+            for item in verdict["unsupported_commitments"]:
+                st.markdown(f"- {item}")
+        else:
+            st.caption("No unsupported commitments identified.")
         st.write("**Recommendation:**", verdict["recommendation"])
         st.caption(f"Model: {result['model'] or 'unknown'} · "
                    f"Latency: {result['latency_ms'] or 'unknown'} ms")
