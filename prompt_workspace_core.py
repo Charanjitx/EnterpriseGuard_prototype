@@ -5,6 +5,16 @@ from llm_engine import generate_response
 MAX_INPUT_CHARS = 12000
 
 
+class EmptyGenerationError(ValueError):
+    """No visible chatbot output; the evaluator must not run."""
+
+    def __init__(self, finish_reason=None):
+        self.finish_reason = finish_reason if finish_reason in (
+            "stop", "length", "content_filter", "tool_calls",
+        ) else "unknown"
+        super().__init__("The model returned an empty response.")
+
+
 def validate_inputs(system_prompt, policy, query):
     for name, value in (
         ("System prompt", system_prompt),
@@ -27,7 +37,7 @@ def test_prompt(system_prompt, policy, query, *, generator=generate_response,
     )
     response = generation["response"]
     if not isinstance(response, str) or not response.strip():
-        raise ValueError("The model returned an empty response.")
+        raise EmptyGenerationError(generation.get("finish_reason"))
     evaluation = evaluator(query=query, response=response, policy=policy)
     return {
         "response": response,
