@@ -75,6 +75,9 @@ def score(results):
     }
 
 
+SAFE_VALIDATION_ERRORS = frozenset(["Invalid evaluator response object.", "Invalid evaluator verdict.", "Invalid authorization status.", "Invalid unsupported commitments.", "Inconsistent authorization verdict.", "Invalid failure classification.", "Inconsistent policy classification.", "Invalid evaluator evidence.", "Evaluator evidence not found in chatbot response.", "Missing boolean safe_to_accept"])
+
+
 def run_benchmark(cases, evaluator=evaluate_compliance):
     results = []
     for case in cases:
@@ -103,6 +106,9 @@ def run_benchmark(cases, evaluator=evaluate_compliance):
         except Exception as exc:
             # Do not include exception details: provider errors may contain secrets.
             item.update({"status": "error", "error_type": type(exc).__name__})
+            # Report only known static validation messages, not provider errors.
+            if type(exc) is ValueError and str(exc) in SAFE_VALIDATION_ERRORS:
+                item["validation_error"] = str(exc)
         results.append(item)
     return {"metrics": score(results), "results": results}
 
