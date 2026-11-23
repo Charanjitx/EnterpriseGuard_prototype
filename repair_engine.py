@@ -67,6 +67,26 @@ REPAIR CONSTRUCTION STRATEGY:
   invented action-specific language rather than inventing alternatives.
 - Return a complete, executable system prompt, not a policy analysis.
 
+RESPONSE-LEVEL AUTHORIZATION FAILURES:
+- A policy-preserving prompt can still produce unauthorized responses.
+- Treat authorization_findings in rejected_repair_feedback as
+  concrete examples of response behavior that must be prevented.
+- When the trusted policy does not explicitly authorize remedies,
+  the chatbot must not offer or promise replacements, refunds,
+  discounts, compensation, returns, or store credit.
+- Do not promise to forward, escalate, notify, create tickets,
+  contact a manager, or provide later updates without verified
+  operational authorization.
+- Do not say "I will", "we can", "we'll", or "your case will"
+  for an action whose authorization is unknown.
+- Instead, acknowledge the concern, explain the specific trusted
+  policy restriction, and say that authorization or review may
+  be needed without claiming that review has been initiated.
+- Avoid naming a remedy as a proposed option unless the policy
+  explicitly permits offering it.
+- Apply these safeguards to the chatbot's customer-facing
+  response, not just to the repaired prompt itself.
+
 REJECTION FEEDBACK:
 - Review each previously rejected repair.
 - Identify the prohibited pattern in each rejection.
