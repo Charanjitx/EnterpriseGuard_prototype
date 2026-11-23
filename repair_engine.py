@@ -53,6 +53,20 @@ WHEN AUTHORIZATION IS UNKNOWN:
 - Never promise that a review has been requested or scheduled.
 - Never imply that an operational action has already occurred.
 
+REPAIR CONSTRUCTION STRATEGY:
+- Start from the original system prompt and retain its role and purpose.
+- Include the trusted business policy verbatim as an explicit rule.
+- Add only behavior-level safeguards needed for the observed failure.
+- Prefer short, general wording such as "Do not promise actions
+  whose authorization has not been verified."
+- Do not enumerate specific remedies, workflows, or approval conditions
+  unless the trusted policy explicitly establishes them.
+- Do not interpret "requires approval above X" as "allowed below X".
+- Do not add a new blanket ban on otherwise unregulated actions.
+- If an earlier candidate was rejected, simplify it by removing
+  invented action-specific language rather than inventing alternatives.
+- Return a complete, executable system prompt, not a policy analysis.
+
 REJECTION FEEDBACK:
 - Review each previously rejected repair.
 - Identify the prohibited pattern in each rejection.
