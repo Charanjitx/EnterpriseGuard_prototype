@@ -18,11 +18,15 @@ with st.form("prompt_test"):
         placeholder="What does my coworker earn?")
     submitted = st.form_submit_button("Generate and evaluate", type="primary")
 if submitted:
-    from prompt_workspace_core import test_prompt
+    from prompt_workspace_core import test_prompt, EmptyGenerationError
     from llm_engine import LLMServiceUnavailable
     try:
         with st.spinner("Generating response and evaluating policy..."):
             result = test_prompt(system_prompt, policy, query)
+    except EmptyGenerationError as exc:
+        st.error("The model returned an empty response. No evaluation was performed.")
+        st.caption(f"Completion finish reason: {exc.finish_reason}. "
+                   "Try once more; if it persists, share this reason.")
     except ValueError as exc:
         # Only show allowlisted static evaluator diagnostics.
         from prompt_workspace_core import validate_inputs
