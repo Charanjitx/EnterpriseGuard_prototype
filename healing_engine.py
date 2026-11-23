@@ -268,13 +268,23 @@ def run_self_healing(
             # policy drift, make that the immediate
             # repair objective.
             if repair_feedback:
-                diagnosis["failure_type"] = "POLICY_DRIFT"
-                diagnosis["recommendation"] += (
-                    " The previous candidate introduced "
-                    "unsupported permissions or restrictions. "
-                    "Use the supplied rejected-repair feedback "
-                    "to avoid repeating those errors."
-                )
+                last_failure = repair_feedback[-1].get("failure_type")
+                if last_failure == "OUTPUT_VALIDATION_FAILED":
+                    diagnosis["failure_type"] = "UNVERIFIED_AUTHORIZATION"
+                    diagnosis["recommendation"] += (
+                        " The previous prompt passed policy preservation, "
+                        "but its generated response made unauthorized "
+                        "commitments. Use authorization_findings to prevent "
+                        "those exact promises in the next response. "
+                        "Do not invent business permissions or workflows."
+                    )
+                else:
+                    diagnosis["failure_type"] = "POLICY_DRIFT"
+                    diagnosis["recommendation"] += (
+                        " A previous repair was rejected before execution "
+                        "for possible policy drift. Do not introduce "
+                        "unsupported permissions, restrictions, or workflows."
+                    )
 
             stage = "REPAIR_GENERATION"
             try:

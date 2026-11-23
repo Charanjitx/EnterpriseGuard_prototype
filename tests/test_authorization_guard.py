@@ -88,6 +88,35 @@ class TestAuthorizationGuard(unittest.TestCase):
 
         self.assertIn("OPERATIONAL_ACTION", categories)
 
+    def test_accepted_live_response_review_and_follow_up_are_flagged(self):
+        response = (
+            "Once I have that information, I’ll review the details "
+            "and let you know the next steps. "
+            "I’ll do my best to get this sorted out for you."
+        )
+        result = check_authorization(response)
+        categories = {item["category"] for item in result["unsupported_commitments"]}
+        self.assertFalse(result["passed"])
+        self.assertIn("REVIEW_COMMITMENT", categories)
+        self.assertIn("FOLLOW_UP_PROMISE", categories)
+
+    def test_review_is_required_is_not_a_promise(self):
+        response = (
+            "I'm sorry the item arrived damaged. "
+            "A full refund requires manager approval. "
+            "Your request may need review; I cannot promise an outcome."
+        )
+        self.assertTrue(check_authorization(response)["passed"])
+
+    def test_review_commitment_requires_explicit_authorization(self):
+        response = "I'll look into your request and let you know."
+        result = check_authorization(response, authorized_actions=["REVIEW_COMMITMENT"])
+        self.assertFalse(result["passed"])
+        self.assertEqual(
+            {x["category"] for x in result["unsupported_commitments"]},
+            {"FOLLOW_UP_PROMISE"},
+        )
+
     def test_no_commitment(self):
         response = (
             "A full refund requires human manager "

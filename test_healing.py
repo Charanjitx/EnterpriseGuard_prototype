@@ -89,197 +89,58 @@ print(
 print("\n===== REPAIR ATTEMPT HISTORY =====")
 
 for attempt in result["history"]:
-
     print("\n" + "=" * 55)
-
     print("Attempt:", attempt["attempt"])
+    print("Outcome:", attempt["outcome"])
 
-    print(
-        "Diagnosis:",
-        attempt["diagnosis"]["failure_type"]
-    )
+    diagnosis = attempt.get("diagnosis") or {}
+    print("Diagnosis:", diagnosis.get("failure_type", "N/A"))
 
-    print(
-        "Outcome:",
-        attempt["outcome"]
-    )
+    repair = attempt.get("repair")
+    print("\n--- AI-REPAIRED PROMPT ---")
+    if isinstance(repair, dict):
+        print(repair.get("repaired_prompt", "No repaired prompt available."))
+    else:
+        print("No locally accepted repair generated.")
+        if attempt.get("repair_error"):
+            print("Repair error:", attempt["repair_error"])
 
-    # --- Repaired Prompt ---
-
-    
-print("\n--- AI-REPAIRED PROMPT ---")
-
-repair = attempt.get("repair")
-
-if isinstance(repair, dict):
-    print(
-        repair.get(
-            "repaired_prompt",
-            "No repaired prompt available."
-        )
-    )
-else:
-    print(
-        "No repaired prompt generated. "
-        "All local repair candidates were rejected."
-    )
-
-    error = attempt.get("error")
-
-    if error:
-        print("\nRepair rejection reason:")
-        print(error)
-
-
-    # --- Policy Preservation ---
-
-    policy_guard = attempt["policy_guard"]
-
+    policy_guard = attempt.get("policy_guard") or {}
     print("\n--- POLICY PRESERVATION ---")
+    print("Status:", policy_guard.get("status", "N/A"))
+    print("Passed:", policy_guard.get("passed", "N/A"))
+    for finding in policy_guard.get("findings", []):
+        print("Finding:", finding)
 
-    print(
-        "Status:",
-        policy_guard["status"]
-    )
-
-    print(
-        "Passed:",
-        policy_guard["passed"]
-    )
-
-    findings = policy_guard.get("findings", [])
-
-    if findings:
-
-        print("\nPolicy drift findings:")
-
-        for index, finding in enumerate(
-            findings,
-            start=1
-        ):
-
-            print(
-                f"{index}. Action: "
-                f"{finding['action']}"
-            )
-
-            print(
-                "   Type:",
-                finding["statement_type"]
-            )
-
-            print(
-                "   Evidence:",
-                finding["evidence"]
-            )
-
-    else:
-
-        print(
-            "No policy drift detected."
-        )
-
-    # --- Re-Test Result ---
-
+    retest = attempt.get("retest")
     print("\n--- REPAIRED CHATBOT RESPONSE ---")
-
-    retest = attempt["retest"]
-
-    if retest is not None:
-
-        print(
-            retest["response"]
-        )
-
+    if isinstance(retest, dict):
+        print(retest.get("response", "Response unavailable."))
         print("\n--- RE-TEST METRICS ---")
-
-        print(
-            "Model:",
-            retest["model"]
-        )
-
-        print(
-            "Latency:",
-            retest["latency_ms"],
-            "ms"
-        )
-
-        print(
-            "Tokens:",
-            retest["total_tokens"]
-        )
-
-        # --- Semantic Compliance ---
-
-        evaluation = attempt["evaluation"]
-
-        print("\n--- SEMANTIC COMPLIANCE ---")
-
-        print(
-            "Passed:",
-            evaluation["passed"]
-        )
-
-        print(
-            "Safe to accept:",
-            evaluation["safe_to_accept"]
-        )
-
-        print(
-            "Authorization status:",
-            evaluation["authorization_status"]
-        )
-
-        # --- Independent Authorization ---
-
-        authorization = attempt["authorization_guard"]
-
-        print("\n--- AUTHORIZATION GUARD ---")
-
-        print(
-            "Passed:",
-            authorization["passed"]
-        )
-
-        print(
-            "Status:",
-            authorization["authorization_status"]
-        )
-
-        commitments = authorization.get(
-            "unsupported_commitments",
-            []
-        )
-
-        if commitments:
-
-            print("\nUnsupported commitments:")
-
-            for finding in commitments:
-
-                print(
-                    "- Category:",
-                    finding["category"]
-                )
-
-                print(
-                    "  Evidence:",
-                    finding["evidence"]
-                )
-
-        else:
-
-            print(
-                "No unsupported commitments detected."
-            )
-
+        print("Model:", retest.get("model", "N/A"))
+        print("Latency:", retest.get("latency_ms", "N/A"), "ms")
+        print("Tokens:", retest.get("total_tokens", "N/A"))
     else:
+        print("NOT EXECUTED — No retest response available.")
 
-        print(
-            "NOT EXECUTED — Policy drift "
-            "detected before chatbot execution."
-        )
+    evaluation = attempt.get("evaluation") or {}
+    print("\n--- SEMANTIC COMPLIANCE ---")
+    print("Passed:", evaluation.get("passed", "N/A"))
+    print("Safe to accept:", evaluation.get("safe_to_accept", "N/A"))
+    print("Authorization status:", evaluation.get("authorization_status", "N/A"))
 
+    authorization = attempt.get("authorization_guard") or {}
+    print("\n--- INDEPENDENT AUTHORIZATION ---")
+    print("Passed:", authorization.get("passed", "N/A"))
+    print("Status:", authorization.get("authorization_status", "N/A"))
+    findings = authorization.get("unsupported_commitments", [])
+    if findings:
+        for finding in findings:
+            print("Category:", finding.get("category", "N/A"))
+            print("Evidence:", finding.get("evidence", "N/A"))
+            print("Reason:", finding.get("reason", "N/A"))
+    else:
+        print("No unsupported commitments detected.")
     print("=" * 55)
 
 
