@@ -1,6 +1,6 @@
 """Offline contract tests for the custom prompt workspace."""
 import unittest
-from prompt_workspace_core import test_prompt, validate_inputs
+from prompt_workspace_core import test_prompt, validate_inputs, suggest_repair
 
 
 class TestPromptWorkspace(unittest.TestCase):
@@ -35,6 +35,29 @@ class TestPromptWorkspace(unittest.TestCase):
         self.assertEqual(calls[1][1:], ("my query", "No.", "my policy"))
         self.assertNotIn("evaluation_trace", result["evaluation"])
         self.assertNotIn("system_prompt", result)
+
+    def test_repair_requires_rejected_evaluation(self):
+        with self.assertRaises(ValueError):
+            suggest_repair("prompt", "policy", "query", "response",
+                           {"safe_to_accept": True})
+
+    def test_suggest_repair_does_not_execute_candidate(self):
+        calls = []
+        def diagnoser(**kwargs):
+            calls.append("diagnose")
+            return {"failure_type": "POLICY_VIOLATION",
+                    "root_cause": "Observed violation",
+                    "suspected_root_cause": "Missing policy",
+                    "recommendation": "Strengthen prompt", "evidence": []}
+        def repairer(**kwargs):
+            calls.append("repair")
+            return {"repaired_prompt": "candidate",
+                    "policy_validation": {"passed": True, "findings": []}}
+        result = suggest_repair("prompt", "policy", "query", "response",
+                                {"safe_to_accept": False},
+                                diagnoser=diagnoser, repairer=repairer)
+        self.assertEqual(calls, ["diagnose", "repair"])
+        self.assertEqual(result["candidate_prompt"], "candidate")
 
     def test_empty_model_response_does_not_evaluate(self):
         def generate(**kwargs):
