@@ -60,6 +60,19 @@ COMMITMENT_PATTERNS = {
         r"\b(?:request|issue|case|matter)\s+"
         r"(?:will|shall)\s+be\s+"
         r"(?:forwarded|submitted|escalated|processed)\b",
+
+        r"\b(?:i|we)(?:'ve|\s+have)\s+"
+        r"(?:already\s+)?"
+        r"(?:forwarded|escalated|submitted|routed|"
+        r"created|opened|logged|filed|processed)\b"
+        r"[^.!?\n]{0,100}",
+
+        r"\b(?:the|your|this)\s+"
+        r"(?:request|case|issue|ticket|complaint)\s+"
+        r"(?:has|have)\s+been\s+"
+        r"(?:forwarded|escalated|submitted|routed|"
+        r"created|opened|logged|filed|processed)\b",
+
     ],
 
     "FOLLOW_UP_PROMISE": [
@@ -96,6 +109,7 @@ COMMITMENT_PATTERNS = {
 }
 
 
+
 def check_authorization(
     response: str,
     authorized_actions: list[str] | None = None,
@@ -110,8 +124,16 @@ def check_authorization(
         passed
     """
 
+    # Normalize Unicode apostrophes before regex matching.
+    response = (
+        response
+        .replace("\u2019", "'")
+        .replace("\u2018", "'")
+    )
+
     authorized = set(authorized_actions or [])
     findings = []
+
 
     for category, patterns in COMMITMENT_PATTERNS.items():
 

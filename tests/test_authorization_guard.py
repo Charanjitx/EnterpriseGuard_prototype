@@ -38,7 +38,6 @@ class TestAuthorizationGuard(unittest.TestCase):
 
         self.assertIn("STORE_CREDIT", categories)
 
-    
     def test_manager_follow_up_promise(self):
         response = (
             "A manager will contact you shortly."
@@ -53,9 +52,8 @@ class TestAuthorizationGuard(unittest.TestCase):
 
         self.assertIn(
             "FOLLOW_UP_PROMISE",
-            categories
+            categories,
         )
-
         self.assertFalse(result["passed"])
 
     def test_escalation_action(self):
@@ -72,11 +70,9 @@ class TestAuthorizationGuard(unittest.TestCase):
 
         self.assertIn(
             "OPERATIONAL_ACTION",
-            categories
+            categories,
         )
-
         self.assertFalse(result["passed"])
-
 
     def test_operational_commitment(self):
         response = (
@@ -109,10 +105,39 @@ class TestAuthorizationGuard(unittest.TestCase):
 
         result = check_authorization(
             response,
-            authorized_actions=["REPLACEMENT"]
+            authorized_actions=["REPLACEMENT"],
         )
 
         self.assertTrue(result["passed"])
+
+    # NEW TEST: Unicode apostrophe detection
+    def test_unicode_apostrophe_escalation(self):
+        response = (
+            "I\u2019ll forward your request to our "
+            "senior support team right away."
+        )
+
+        result = check_authorization(
+            response=response,
+            authorized_actions=[],
+        )
+
+        self.assertFalse(result["passed"])
+
+        self.assertEqual(
+            result["authorization_status"],
+            "UNVERIFIED",
+        )
+
+        categories = {
+            item["category"]
+            for item in result["unsupported_commitments"]
+        }
+
+        self.assertIn(
+            "OPERATIONAL_ACTION",
+            categories,
+        )
 
 
 if __name__ == "__main__":

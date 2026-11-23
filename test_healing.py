@@ -106,11 +106,30 @@ for attempt in result["history"]:
 
     # --- Repaired Prompt ---
 
-    print("\n--- AI-REPAIRED PROMPT ---")
+    
+print("\n--- AI-REPAIRED PROMPT ---")
 
+repair = attempt.get("repair")
+
+if isinstance(repair, dict):
     print(
-        attempt["repair"]["repaired_prompt"]
+        repair.get(
+            "repaired_prompt",
+            "No repaired prompt available."
+        )
     )
+else:
+    print(
+        "No repaired prompt generated. "
+        "All local repair candidates were rejected."
+    )
+
+    error = attempt.get("error")
+
+    if error:
+        print("\nRepair rejection reason:")
+        print(error)
+
 
     # --- Policy Preservation ---
 
