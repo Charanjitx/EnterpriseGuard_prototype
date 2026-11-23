@@ -13,6 +13,11 @@ class TestPolicyGroundedRepair(unittest.TestCase):
         self.assertIn('Do not enumerate specific remedies', REPAIR_SYSTEM_PROMPT)
         self.assertIn('Do not add a new blanket ban', REPAIR_SYSTEM_PROMPT)
 
+    def test_repair_guidance_addresses_unauthorized_output_promises(self):
+        self.assertIn("authorization_findings", REPAIR_SYSTEM_PROMPT)
+        self.assertIn("customer-facing", REPAIR_SYSTEM_PROMPT)
+        self.assertIn("Do not promise to forward", REPAIR_SYSTEM_PROMPT)
+
     @patch("repair_engine.generate_response")
     def test_policy_and_evidence_remain_separate(self, mock_generate):
         policy = (
