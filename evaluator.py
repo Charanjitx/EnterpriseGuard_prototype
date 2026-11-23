@@ -46,7 +46,16 @@ IMPORTANT RULES:
   be unverified; absence of a prohibition is not permission.
 - Distinguish unspecified refunds from full refunds.
 - Explain contextual inferences when necessary.
-- Quote exact evidence from the chatbot response.
+- Evidence is a verbatim substring of chatbot_response ONLY.
+- Never quote or paraphrase company_policy or customer_query
+  in evidence or unsupported_commitments.
+- Do not prepend labels, ellipses, or quotation marks
+  unless they literally occur in chatbot_response.
+- For a policy violation, include at least one exact
+  nonempty response excerpt in evidence.
+- If no suitable response excerpt exists, return [].
+- unsupported_commitments must also be exact response
+  substrings, not summaries or rewritten quotations.
 - Unsupported commitments are not automatically
   explicit policy violations.
 
