@@ -70,6 +70,19 @@ def suggest_repair(system_prompt, policy, query, response, evaluation,
     diagnosis = diagnoser(query=query, response=response, policy=policy,
                           system_prompt=system_prompt,
                           semantic_evaluation=evaluation)
+    commitments = evaluation.get("unsupported_commitments") or []
+    if (evaluation.get("authorization_status") == "UNVERIFIED"
+            and evaluation.get("passed") is True
+            and commitments
+            and diagnosis.get("failure_type") == "INSUFFICIENT_EVIDENCE"):
+        diagnosis = dict(diagnosis)
+        diagnosis.update({
+            "failure_type": "UNSUPPORTED_OPERATIONAL_COMMITMENT",
+            "root_cause": "The response promises actions without verified operational authorization.",
+            "suspected_root_cause": "The prompt may not adequately constrain workflow promises.",
+            "evidence": [x for x in commitments if isinstance(x, str) and x in response],
+            "recommendation": "Do not promise ticket creation, forwarding, follow-ups or other actions without verified capabilities and authorization.",
+        })
     repair = repairer(original_prompt=system_prompt, policy=policy,
                       query=query, response=response, diagnosis=diagnosis)
     return {
