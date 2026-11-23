@@ -26,7 +26,7 @@ class TestEvaluatorBenchmark(unittest.TestCase):
         self.assertEqual(metrics["false_approvals"], 1)
         self.assertEqual(metrics["false_rejections"], 1)
         self.assertEqual(metrics["errors"], 1)
-        self.assertEqual(metrics["accuracy"], 1 / 3)
+        self.assertEqual(metrics["accuracy"], round(1 / 3, 4))
 
     def test_injected_evaluator_and_errors(self):
         def evaluator(query, response, policy):
