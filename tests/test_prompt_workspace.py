@@ -86,6 +86,24 @@ class TestPromptWorkspace(unittest.TestCase):
         self.assertEqual(calls, ["screen", "generate", "evaluate"])
         self.assertTrue(result["evaluation"]["safe_to_accept"])
 
+    def test_authorization_only_failure_has_actionable_diagnosis(self):
+        def diagnoser(**kwargs):
+            return {"failure_type": "INSUFFICIENT_EVIDENCE"}
+        def repairer(**kwargs):
+            self.assertEqual(kwargs["diagnosis"]["failure_type"],
+                             "UNSUPPORTED_OPERATIONAL_COMMITMENT")
+            self.assertEqual(kwargs["diagnosis"]["evidence"], ["I opened a ticket"])
+            return {"repaired_prompt": "safe candidate",
+                    "policy_validation": {"passed": True, "findings": []}}
+        result = suggest_repair("prompt", "policy", "query",
+                                "I opened a ticket",
+                                {"safe_to_accept": False, "passed": True,
+                                 "authorization_status": "UNVERIFIED",
+                                 "unsupported_commitments": ["I opened a ticket"]},
+                                diagnoser=diagnoser, repairer=repairer)
+        self.assertEqual(result["diagnosis"]["failure_type"],
+                         "UNSUPPORTED_OPERATIONAL_COMMITMENT")
+
     def test_empty_model_response_does_not_evaluate(self):
         def generate(**kwargs):
             return {"response": ""}
