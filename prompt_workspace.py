@@ -24,14 +24,20 @@ if submitted:
         with st.spinner("Generating response and evaluating policy..."):
             result = test_prompt(system_prompt, policy, query)
     except ValueError as exc:
-        # Display only validation errors authored by our own input validator.
+        # Only show allowlisted static evaluator diagnostics.
         from prompt_workspace_core import validate_inputs
         try:
             validate_inputs(system_prompt, policy, query)
         except ValueError as input_error:
             st.error(str(input_error))
         else:
-            st.error("Model output could not be validated. No verdict was accepted.")
+            from benchmark_evaluator import SAFE_VALIDATION_ERRORS
+            if str(exc) in SAFE_VALIDATION_ERRORS:
+                st.error(f"Evaluator validation failed: {exc}")
+            elif str(exc) == "The model returned an empty response.":
+                st.error("The model returned an empty response.")
+            else:
+                st.error("Model output could not be validated. No verdict was accepted.")
     except LLMServiceUnavailable:
         st.error("The model service is temporarily unavailable. Try again later.")
     except Exception:
