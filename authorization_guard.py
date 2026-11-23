@@ -75,7 +75,23 @@ COMMITMENT_PATTERNS = {
 
     ],
 
+    "REVIEW_COMMITMENT": [
+        # "I'll review the details" / "We will look into your issue"
+        r"\\b(?:i|we)(?:'ll|\\s+will)\\s+"
+        r"(?:review|investigate|look\\s+into|check)\\b"
+        r"[^.!?\\n]{0,100}",
+
+        # "I'll do my best to get this sorted out"
+        r"\\b(?:i|we)(?:'ll|\\s+will)\\s+"
+        r"(?:do\\s+(?:my|our)\\s+best\\s+to|try\\s+to)\\s+"
+        r"(?:resolve|fix|sort\\s+out|get\\s+this\\s+sorted\\s+out)\\b",
+    ],
+
     "FOLLOW_UP_PROMISE": [
+        # "I'll let you know the next steps"
+        r"\\b(?:i|we)(?:'ll|\\s+will)\\s+"
+        r"(?:let\\s+you\\s+know|update\\s+you|inform\\s+you)\\b",
+
         # Manager or team promises to contact customer
         r"\b(?:a|the|our)\s+"
         r"(?:human|manager|representative|agent|team)"
