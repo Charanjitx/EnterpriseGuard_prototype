@@ -86,10 +86,10 @@ print(
 
 # --- Step 4: Repair Attempt History ---
 
-print("\\n===== REPAIR ATTEMPT HISTORY =====")
+print("\n===== REPAIR ATTEMPT HISTORY =====")
 
 for attempt in result["history"]:
-    print("\\n" + "=" * 55)
+    print("\n" + "=" * 55)
     print("Attempt:", attempt["attempt"])
     print("Outcome:", attempt["outcome"])
 
@@ -97,7 +97,7 @@ for attempt in result["history"]:
     print("Diagnosis:", diagnosis.get("failure_type", "N/A"))
 
     repair = attempt.get("repair")
-    print("\\n--- AI-REPAIRED PROMPT ---")
+    print("\n--- AI-REPAIRED PROMPT ---")
     if isinstance(repair, dict):
         print(repair.get("repaired_prompt", "No repaired prompt available."))
     else:
@@ -106,17 +106,17 @@ for attempt in result["history"]:
             print("Repair error:", attempt["repair_error"])
 
     policy_guard = attempt.get("policy_guard") or {}
-    print("\\n--- POLICY PRESERVATION ---")
+    print("\n--- POLICY PRESERVATION ---")
     print("Status:", policy_guard.get("status", "N/A"))
     print("Passed:", policy_guard.get("passed", "N/A"))
     for finding in policy_guard.get("findings", []):
         print("Finding:", finding)
 
     retest = attempt.get("retest")
-    print("\\n--- REPAIRED CHATBOT RESPONSE ---")
+    print("\n--- REPAIRED CHATBOT RESPONSE ---")
     if isinstance(retest, dict):
         print(retest.get("response", "Response unavailable."))
-        print("\\n--- RE-TEST METRICS ---")
+        print("\n--- RE-TEST METRICS ---")
         print("Model:", retest.get("model", "N/A"))
         print("Latency:", retest.get("latency_ms", "N/A"), "ms")
         print("Tokens:", retest.get("total_tokens", "N/A"))
@@ -124,13 +124,13 @@ for attempt in result["history"]:
         print("NOT EXECUTED — No retest response available.")
 
     evaluation = attempt.get("evaluation") or {}
-    print("\\n--- SEMANTIC COMPLIANCE ---")
+    print("\n--- SEMANTIC COMPLIANCE ---")
     print("Passed:", evaluation.get("passed", "N/A"))
     print("Safe to accept:", evaluation.get("safe_to_accept", "N/A"))
     print("Authorization status:", evaluation.get("authorization_status", "N/A"))
 
     authorization = attempt.get("authorization_guard") or {}
-    print("\\n--- INDEPENDENT AUTHORIZATION ---")
+    print("\n--- INDEPENDENT AUTHORIZATION ---")
     print("Passed:", authorization.get("passed", "N/A"))
     print("Status:", authorization.get("authorization_status", "N/A"))
     findings = authorization.get("unsupported_commitments", [])
