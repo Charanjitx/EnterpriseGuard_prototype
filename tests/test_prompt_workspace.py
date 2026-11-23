@@ -1,6 +1,6 @@
 """Offline contract tests for the custom prompt workspace."""
 import unittest
-from prompt_workspace_core import test_prompt, validate_inputs, suggest_repair
+from prompt_workspace_core import test_prompt, validate_inputs, suggest_repair, retest_candidate
 
 
 class TestPromptWorkspace(unittest.TestCase):
@@ -58,6 +58,33 @@ class TestPromptWorkspace(unittest.TestCase):
                                 diagnoser=diagnoser, repairer=repairer)
         self.assertEqual(calls, ["diagnose", "repair"])
         self.assertEqual(result["candidate_prompt"], "candidate")
+
+    def test_retest_blocks_failed_policy_screening_without_generation(self):
+        def checker(**kwargs):
+            return {"passed": False, "findings": ["drift"]}
+        def generator(**kwargs):
+            self.fail("Unsafe candidate must not run")
+        with self.assertRaises(ValueError):
+            retest_candidate("candidate", "policy", "query",
+                             policy_checker=checker, generator=generator)
+
+    def test_retest_evaluates_once_without_promotion(self):
+        calls = []
+        def checker(**kwargs):
+            calls.append("screen")
+            return {"passed": True}
+        def generator(**kwargs):
+            calls.append("generate")
+            return {"response": "I cannot promise that.", "model": "test"}
+        def evaluator(**kwargs):
+            calls.append("evaluate")
+            return {"passed": True, "safe_to_accept": True,
+                    "failure_type": "NONE", "authorization_status": "VERIFIED"}
+        result = retest_candidate("candidate", "policy", "query",
+                                  policy_checker=checker, generator=generator,
+                                  evaluator=evaluator)
+        self.assertEqual(calls, ["screen", "generate", "evaluate"])
+        self.assertTrue(result["evaluation"]["safe_to_accept"])
 
     def test_empty_model_response_does_not_evaluate(self):
         def generate(**kwargs):
