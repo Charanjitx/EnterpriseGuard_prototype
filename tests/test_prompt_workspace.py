@@ -1,0 +1,50 @@
+"""Offline contract tests for the custom prompt workspace."""
+import unittest
+from prompt_workspace_core import test_prompt, validate_inputs
+
+
+class TestPromptWorkspace(unittest.TestCase):
+    def test_required_fields(self):
+        for values in [("", "policy", "query"),
+                       ("prompt", " ", "query"),
+                       ("prompt", "policy", "")]:
+            with self.assertRaises(ValueError):
+                validate_inputs(*values)
+
+    def test_oversized_field_rejected(self):
+        with self.assertRaises(ValueError):
+            validate_inputs("x" * 12001, "policy", "query")
+
+    def test_custom_inputs_are_forwarded_and_result_is_filtered(self):
+        calls = []
+        def generate(system_prompt, user_query, model):
+            calls.append(("generate", system_prompt, user_query, model))
+            return {"response": "No.", "model": model, "latency_ms": 42,
+                    "system_prompt": "sensitive"}
+        def evaluate(query, response, policy):
+            calls.append(("evaluate", query, response, policy))
+            return {"passed": True, "safe_to_accept": True,
+                    "failure_type": "NONE", "authorization_status": "VERIFIED",
+                    "reason": "No violation", "evidence": [],
+                    "unsupported_commitments": [], "recommendation": "",
+                    "evaluation_trace": {"secret": "do not expose"}}
+        result = test_prompt("my prompt", "my policy", "my query",
+                             generator=generate, evaluator=evaluate)
+        self.assertEqual(len(calls), 2)
+        self.assertEqual(calls[0][1:3], ("my prompt", "my query"))
+        self.assertEqual(calls[1][1:], ("my query", "No.", "my policy"))
+        self.assertNotIn("evaluation_trace", result["evaluation"])
+        self.assertNotIn("system_prompt", result)
+
+    def test_empty_model_response_does_not_evaluate(self):
+        def generate(**kwargs):
+            return {"response": ""}
+        def evaluate(**kwargs):
+            self.fail("Evaluator should not be called")
+        with self.assertRaises(ValueError):
+            test_prompt("prompt", "policy", "query",
+                        generator=generate, evaluator=evaluate)
+
+
+if __name__ == "__main__":
+    unittest.main()
