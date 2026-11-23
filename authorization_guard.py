@@ -92,6 +92,12 @@ COMMITMENT_PATTERNS = {
         r"\b(?:i|we)(?:'ll|\s+will)\s+"
         r"(?:let\s+you\s+know|update\s+you|inform\s+you)\b",
 
+        # Compound commitments: "I'll review it and let you know"
+        r"\b(?:i|we)(?:'ll|\s+will)\s+"
+        r"(?:review|investigate|look\s+into|check)\b"
+        r"[^.!?\n]{0,100}?\band\s+"
+        r"(?:let\s+you\s+know|update\s+you|inform\s+you)\b",
+
         # Manager or team promises to contact customer
         r"\b(?:a|the|our)\s+"
         r"(?:human|manager|representative|agent|team)"
