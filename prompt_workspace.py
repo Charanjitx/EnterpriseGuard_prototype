@@ -20,6 +20,7 @@ with st.form("prompt_test"):
 if submitted:
     st.session_state.pop("workspace_repair", None)
     st.session_state.pop("workspace_case", None)
+    st.session_state.pop("workspace_retest", None)
     from prompt_workspace_core import test_prompt, EmptyGenerationError
     from llm_engine import LLMServiceUnavailable
     try:
@@ -90,6 +91,7 @@ if case and not case["evaluation"]["safe_to_accept"]:
     st.caption("Optional: may use up to two additional model calls. "
                "No automatic retest, prompt promotion, or deployment.")
     if st.button("Diagnose and suggest repair"):
+        st.session_state.pop("workspace_retest", None)
         from prompt_workspace_core import suggest_repair
         try:
             with st.spinner("Diagnosing and generating a policy-checked candidate..."):
@@ -113,3 +115,45 @@ if case and not case["evaluation"]["safe_to_accept"]:
                      value=proposal["candidate_prompt"], height=260,
                      key="candidate_preview")
         st.caption("Copy the candidate for review. It has not been executed or deployed.")
+
+        if proposal["policy_validation"]["passed"]:
+            st.caption("Retesting makes one generation call and one evaluator call.")
+            if st.button("Retest candidate (explicit API calls)"):
+                from prompt_workspace_core import retest_candidate, EmptyGenerationError
+                try:
+                    with st.spinner("Retesting candidate against the original policy..."):
+                        st.session_state["workspace_retest"] = retest_candidate(
+                            proposal["candidate_prompt"], case["policy"], case["query"])
+                except EmptyGenerationError as exc:
+                    st.error(f"Candidate returned no visible response (finish reason: {exc.finish_reason}).")
+                except Exception:
+                    st.error("Candidate retest failed. No verdict was accepted.")
+            retest = st.session_state.get("workspace_retest")
+            if retest:
+                st.subheader("Original vs. candidate")
+                left, right = st.columns(2)
+                with left:
+                    st.markdown("**Original response**")
+                    st.write(case["response"])
+                    st.write("**Original accepted:**",
+                             case["evaluation"]["safe_to_accept"])
+                    st.write("**Original policy verdict:**",
+                             case["evaluation"]["failure_type"])
+                with right:
+                    st.markdown("**Candidate response**")
+                    st.write(retest["response"])
+                    st.write("**Candidate accepted in this test:**",
+                             retest["evaluation"]["safe_to_accept"])
+                    st.write("**Candidate policy verdict:**",
+                             retest["evaluation"]["failure_type"])
+                    st.write("**Authorization:**",
+                             retest["evaluation"]["authorization_status"])
+                    st.write("**Reason:**", retest["evaluation"]["reason"])
+                    st.markdown("**Policy evidence**")
+                    for excerpt in retest["evaluation"]["evidence"]:
+                        st.write("- " + excerpt)
+                    st.markdown("**Unsupported commitments**")
+                    for excerpt in retest["evaluation"]["unsupported_commitments"]:
+                        st.write("- " + excerpt)
+                st.caption("One test case cannot prove general safety. "
+                           "The original prompt remains unchanged; no deployment occurred.")
