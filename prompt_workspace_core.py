@@ -1,6 +1,8 @@
 """Developer-defined single-case prompt testing (no auto-repair)."""
 from evaluator import evaluate_compliance
 from llm_engine import generate_response
+from diagnosis_engine import diagnose_failure
+from repair_engine import repair_prompt
 
 MAX_INPUT_CHARS = 12000
 
@@ -52,5 +54,31 @@ def test_prompt(system_prompt, policy, query, *, generator=generate_response,
             "evidence": evaluation.get("evidence", []),
             "unsupported_commitments": evaluation.get("unsupported_commitments", []),
             "recommendation": evaluation.get("recommendation", ""),
+        },
+    }
+
+
+
+def suggest_repair(system_prompt, policy, query, response, evaluation,
+                   *, diagnoser=diagnose_failure, repairer=repair_prompt):
+    """Suggest a guarded candidate only; never execute or deploy it."""
+    validate_inputs(system_prompt, policy, query)
+    if not isinstance(response, str) or not response.strip():
+        raise ValueError("A generated response is required for diagnosis.")
+    if evaluation.get("safe_to_accept") is not False:
+        raise ValueError("Repair is available only for rejected evaluations.")
+    diagnosis = diagnoser(query=query, response=response, policy=policy,
+                          system_prompt=system_prompt,
+                          semantic_evaluation=evaluation)
+    repair = repairer(original_prompt=system_prompt, policy=policy,
+                      query=query, response=response, diagnosis=diagnosis)
+    return {
+        "diagnosis": {key: diagnosis.get(key) for key in (
+            "failure_type", "root_cause", "suspected_root_cause",
+            "recommendation", "evidence", "limitations")},
+        "candidate_prompt": repair["repaired_prompt"],
+        "policy_validation": {
+            "passed": repair["policy_validation"]["passed"],
+            "findings": repair["policy_validation"].get("findings", []),
         },
     }
