@@ -18,6 +18,8 @@ with st.form("prompt_test"):
         placeholder="What does my coworker earn?")
     submitted = st.form_submit_button("Generate and evaluate", type="primary")
 if submitted:
+    st.session_state.pop("workspace_repair", None)
+    st.session_state.pop("workspace_case", None)
     from prompt_workspace_core import test_prompt, EmptyGenerationError
     from llm_engine import LLMServiceUnavailable
     try:
@@ -75,3 +77,39 @@ if submitted:
         st.write("**Recommendation:**", verdict["recommendation"])
         st.caption(f"Model: {result['model'] or 'unknown'} · "
                    f"Latency: {result['latency_ms'] or 'unknown'} ms")
+
+        st.session_state["workspace_case"] = {
+            "system_prompt": system_prompt, "policy": policy, "query": query,
+            "response": result["response"], "evaluation": verdict,
+        }
+
+case = st.session_state.get("workspace_case")
+if case and not case["evaluation"]["safe_to_accept"]:
+    st.divider()
+    st.subheader("Step 99 · Diagnose and suggest repair")
+    st.caption("Optional: may use up to two additional model calls. "
+               "No automatic retest, prompt promotion, or deployment.")
+    if st.button("Diagnose and suggest repair"):
+        from prompt_workspace_core import suggest_repair
+        try:
+            with st.spinner("Diagnosing and generating a policy-checked candidate..."):
+                st.session_state["workspace_repair"] = suggest_repair(**case)
+        except Exception:
+            st.error("Diagnosis or repair generation failed. No candidate was accepted.")
+    proposal = st.session_state.get("workspace_repair")
+    if proposal:
+        diagnosis = proposal["diagnosis"]
+        st.write("**Observed failure:**", diagnosis.get("root_cause") or "Unknown")
+        st.write("**Suspected cause (hypothesis):**",
+                 diagnosis.get("suspected_root_cause") or "Unknown")
+        st.write("**Suggested intervention:**",
+                 diagnosis.get("recommendation") or "Review manually")
+        if proposal["policy_validation"]["passed"]:
+            st.success("Candidate passed heuristic policy-preservation screening. "
+                       "Human review and regression testing are still required.")
+        else:
+            st.warning("Candidate failed policy-preservation screening.")
+        st.text_area("Suggested replacement system prompt",
+                     value=proposal["candidate_prompt"], height=260,
+                     key="candidate_preview")
+        st.caption("Copy the candidate for review. It has not been executed or deployed.")
